@@ -1,0 +1,99 @@
+plugins {
+	id 'org.springframework.boot' version '2.6.3'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'maven-publish'
+	id 'jacoco'
+	id 'org.sonarqube' version '3.1.1'
+}
+
+ext {
+	baseVersion = "0.0.1"
+	springCloudVersion = "2021.0.0"
+}
+
+group = 'com.iiht.fse4'
+description = 'Skill Tracker authorization Service'
+//version = '0.0.1'
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'com.google.code.gson:gson:2.8.9'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.3'
+	implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql:42.3.1'
+	compileOnly 'io.jsonwebtoken:jjwt-api:0.11.1'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.1'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.1'
+	testRuntimeOnly 'com.h2database:h2:2.0.204'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+test {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+	dependsOn test // tests are required to run before generating the report
+}
+
+jacoco {
+	toolVersion = "0.8.7"
+}
+jacocoTestReport {
+	reports {
+		xml.enabled true
+		html.enabled true
+		csv.enabled false
+	}
+}
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			element = 'BUNDLE'
+			limit {
+				value = 'COVEREDRATIO'
+				minimum = 0.0
+			}
+		}
+	}
+}
+
+project.tasks["sonarqube"].dependsOn "jacocoTestReport"
+
+sonarqube {
+	properties {
+		property 'sonar.projectKey', 'com.iiht.fse4:skill-tracker-auth-service'
+		property 'sonar.projectName', 'skill-tracker-auth-service'
+		property "sonar.coverage.exclusions", "**/model/**,**/config/**,**/test/**,**/*generated*/**"
+		property "sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+	}
+}
+
+build.finalizedBy(["jacocoTestReport", "jacocoTestCoverageVerification"])
